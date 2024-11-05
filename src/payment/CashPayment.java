@@ -9,21 +9,47 @@ public class CashPayment {
     private String paymentID;
     private boolean isCancelled; // Track if payment is canceled
 
-    public CashPayment(double amount, String paymentID) {
+    public CashPayment(double amount, String paymentID) 
+    {
         this.amount = amount;
         this.paymentID = paymentID;
         this.isCancelled = false; // Initially, payment is not canceled
     }
 
-    public void addPaymentInfoToCSV(double amount, String paymentID) {
-        try {
-            PaymentIDController.writeToCSV(new String[]{paymentID, String.valueOf(amount)});
-        } catch (Exception e) {
+    public void addPaymentInfoToCSV(double amount, String paymentID) 
+    {
+        try 
+        {
+            PaymentIDController.writeToCSV(new String[]{paymentID, "cash", "true", String.valueOf(amount), null});
+        } 
+        catch (Exception e) 
+        {
             e.printStackTrace();
         }
     }
+    
+    public void cancelPayment() 
+    {
+        if (isCancelled == false) 
+        {
+            isCancelled = true; // Mark the payment as canceled
+            System.out.println("Payment with ID " + paymentID + " has been canceled.");
+            
+            // log cancellation in CSV
+            try 
+            {
+            	PaymentIDController.writeToCSV(new String[]{paymentID, "cash", "false"});
+            } 
+            catch (Exception e) 
+            {
+                e.printStackTrace();
+            }
+            
+        } 
+    }
 
-    public void processPayment() {
+    public boolean processPayment() 
+    {
     	
     	Scanner userInput = new Scanner(System.in);
     	
@@ -33,32 +59,20 @@ public class CashPayment {
     	
     	userInput.close();
     	
-    	if(userAnswer.equals("no"))
+    	if(userAnswer.equals("No"))
     	{
     		cancelPayment();
-    		// What should we do now?
+    		return true;
     	}
     	
-        if (!isCancelled) {
+        if (isCancelled == false) 
+        {
             System.out.println("Your payment of $" + amount + " is completed.");
             addPaymentInfoToCSV(amount, paymentID);
-            // What should we do now? exit or something?
         }
+        
+        return false;
     }
 
-    public void cancelPayment() {
-    	
-        if (!isCancelled) {
-            isCancelled = true; // Mark the payment as canceled
-            System.out.println("Payment with ID " + paymentID + " has been canceled.");
-            
-            // log cancellation in CSV
-            try {
-            	PaymentIDController.writeToCSV(new String[]{paymentID, "Canceled"});
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            
-        } 
-    }
+   
 }

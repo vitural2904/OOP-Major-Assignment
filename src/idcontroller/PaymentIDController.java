@@ -70,7 +70,7 @@ public class PaymentIDController {
     // Write a new line to CSV
     public static void writeToCSV(String[] newRow) throws Exception 
     {
-        try (FileWriter fw = new FileWriter("payment.csv", true); // true to add to file
+        try (FileWriter fw = new FileWriter(CSV_FILE_PATH, true); // true to add to file
              BufferedWriter bw = new BufferedWriter(fw);
              PrintWriter out = new PrintWriter(bw)) 
         {
