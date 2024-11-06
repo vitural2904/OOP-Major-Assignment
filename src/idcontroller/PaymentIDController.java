@@ -10,31 +10,33 @@ public class PaymentIDController {
 
     
     // Generate a new paymentID
-    public static String generatePaymentID() throws IOException 
+    public static String generatePaymentID(String type) throws IOException 
     {
         String today = getCurrentDate(); // YYYYMMDD
-        List<String[]> data = readCSV("payment.csv");
+        String currentMonth = today.substring(0, 6); // YYYYMM
+        List<String[]> data = readCSV(CSV_FILE_PATH);
         int currentMaxID = 0;
 
-        // Check if no paymentID has been created for today
-        for (String[] row : data) 
-        {
-            String paymentID = row[0]; // row[0] reference to paymentID on CSV file
-            if (paymentID.startsWith(today)) 
-            {
-                // Get the "XXX" part
-                int paymentNumber = Integer.parseInt(paymentID.substring(8));
+        // Get the prefix of ID base on type (import or export)
+        String prefix = type.equals("import") ? "im" : "ex";
+
+        // Check weather it had paymentID for this type and in this month
+        for (String[] row : data) {
+            String paymentID = row[0]; // row[0] refers to paymentID in CSV file
+            if (paymentID.startsWith(prefix + currentMonth)) 
+            { 
+                // Get ID's 3 last digit number
+                int paymentNumber = Integer.parseInt(paymentID.substring(10)); // "XXX" part
                 if (paymentNumber > currentMaxID) 
                 {
-                    currentMaxID = paymentNumber; // Get max "ID" in the day
+                    currentMaxID = paymentNumber; // Get max ID in the month for this type of Order
                 }
             }
         }
 
-        // If not, start with 001, else +1
-        String newPaymentID = today + String.format("%03d", currentMaxID + 1);
-
-        return newPaymentID;
+        // Create new ID
+        String newID = prefix + today + String.format("%03d", currentMaxID + 1);
+        return newID;
     }
 
     

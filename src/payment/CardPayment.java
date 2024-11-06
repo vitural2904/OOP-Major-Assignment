@@ -1,5 +1,6 @@
 package payment;
-import java.util.Scanner;
+
+import javax.swing.JOptionPane;
 
 import idcontroller.PaymentIDController;
 
@@ -9,20 +10,22 @@ public class CardPayment {
     private String customerCardNumber;
     private String paymentID;
     private boolean isCancelled; // Track if payment is canceled
+    private String employeeHandle;
 
-    public CardPayment(double amount, String paymentID) 
+    public CardPayment(double amount, String paymentID, String employeeHandle) 
     {
         this.amount = amount;
         this.customerCardNumber = null;
         this.paymentID = paymentID;
         this.isCancelled = false; // Initially, payment is not canceled
+        this.employeeHandle = employeeHandle;
     }
 
     public void addPaymentInfoToCSV(double amount, String paymentID, String customerCardNumber) 
     {
         try 
         {
-            PaymentIDController.writeToCSV(new String[]{paymentID, "card", "true", String.valueOf(amount), customerCardNumber});
+            PaymentIDController.writeToCSV(new String[]{paymentID, String.format(employeeHandle), "card", "true", String.valueOf(amount), customerCardNumber});
         } 
         catch (Exception e) 
         {
@@ -43,12 +46,13 @@ public class CardPayment {
         if (isCancelled == false) 
         {
             isCancelled = true; // Mark the payment as canceled
-            System.out.println("Payment with ID " + paymentID + " has been canceled.");
+            JOptionPane.showMessageDialog(null, "Payment with ID " + paymentID + " has been canceled.", 
+                    "Payment Canceled", JOptionPane.INFORMATION_MESSAGE);
             
             // log cancellation in CSV
             try 
             {
-            	PaymentIDController.writeToCSV(new String[]{paymentID, "card", "false"});
+            	PaymentIDController.writeToCSV(new String[]{paymentID, String.format(employeeHandle), "card", "false"});
             } 
             catch (Exception e) 
             {
@@ -60,36 +64,56 @@ public class CardPayment {
 
     public boolean processPayment() 
     {
-
     	
-    	Scanner userInput = new Scanner(System.in);
-    	
-    	System.out.println("Do you wish to continue with your payment? (Yes/No)");
-    	String userAnswer = userInput.nextLine().trim().toLowerCase();
-    	
-    	
-    	if(userAnswer.equals("yes"))
-    	{
-    		cancelPayment();
-    		userInput.close();
-    		return true;
-    	}
-    	
-        if (isCancelled == false) 
+    	// Display confirmation dialog to continue with the payment
+        int userChoice = JOptionPane.showConfirmDialog(null, 
+            "Do you wish to continue with your payment?", 
+            "Payment Confirmation", 
+            JOptionPane.YES_NO_OPTION);
+        
+        if (userChoice == JOptionPane.NO_OPTION) 
         {
-
-            System.out.println("Please provide your credit card number:");
-            while(isCardNumberValid(customerCardNumber) == false)
-            {
-            	customerCardNumber = userInput.nextLine().trim();
-            	System.out.println("Invalid card number. Please try again.");
-                
-            }
-            System.out.println("Your payment of $" + amount + " is completed.");
-            addPaymentInfoToCSV(amount, paymentID, customerCardNumber);
+            cancelPayment();
+            return true;
         }
+    	
+    	if (!isCancelled) 
+    	{
+    	    boolean isValidCardNumber = false;
 
-        userInput.close(); 
+    	    // Prompt user for credit card number
+    	    while (!isValidCardNumber) 
+    	    {
+    	        customerCardNumber = JOptionPane.showInputDialog(null, 
+    	            "Please provide your credit card number:");
+
+    	        if (customerCardNumber == null) // Handle cancel action in the input dialog
+    	        {
+    	            cancelPayment();
+    	            return false; // Exit if the user cancels the input
+    	        }
+
+    	        // Validate the card number
+    	        if (isCardNumberValid(customerCardNumber)) 
+    	        {
+    	            isValidCardNumber = true; // Valid card number, exit loop
+    	        } 
+    	        else 
+    	        {
+    	            JOptionPane.showMessageDialog(null, 
+    	                "Invalid card number. Please try again.", 
+    	                "Invalid Input", 
+    	                JOptionPane.ERROR_MESSAGE);
+    	        }
+    	    }
+    	    
+    	    JOptionPane.showMessageDialog(null, 
+    	        "Your payment of $" + amount + " is completed.", 
+    	        "Payment Completed", 
+    	        JOptionPane.INFORMATION_MESSAGE);
+    	    
+    	    addPaymentInfoToCSV(amount, paymentID, customerCardNumber);
+    	}
         
         return false;
     }
