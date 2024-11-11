@@ -1,6 +1,9 @@
 package payment;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 import idcontroller.PaymentIDController;
 
@@ -25,7 +28,19 @@ public class CardPayment {
     {
         try 
         {
-            PaymentIDController.writeToCSV(new String[]{paymentID, String.format(employeeHandle), "card", "true", String.valueOf(amount), customerCardNumber});
+            String data[] = new String[]{paymentID, String.format(employeeHandle), "card", "true", String.valueOf(amount), customerCardNumber};
+            
+            String paymentHashValue = generateHash(data);
+
+        	String extendedData[] = Arrays.copyOf(data, data.length + 1);
+        	extendedData[extendedData.length - 1] = paymentHashValue; 
+
+        	String message = "Your payment of $" + amount + " is completed.\n" 
+        	               + "referenceID : " + paymentHashValue;
+        	JOptionPane.showMessageDialog(null, message, 
+        					"Payment Completed", JOptionPane.INFORMATION_MESSAGE);
+
+        	PaymentIDController.writeToCSV(extendedData);
         } 
         catch (Exception e) 
         {
@@ -52,7 +67,19 @@ public class CardPayment {
             // log cancellation in CSV
             try 
             {
-            	PaymentIDController.writeToCSV(new String[]{paymentID, String.format(employeeHandle), "card", "false"});
+            	String data[] = new String[]{paymentID, String.format(employeeHandle), "card", "false"};
+            	
+            	String paymentHashValue = generateHash(data);
+
+            	String extendedData[] = Arrays.copyOf(data, data.length + 1);
+            	extendedData[extendedData.length - 1] = paymentHashValue; 
+
+            	String message = "Payment with ID " + paymentID + " has been canceled.\n" 
+            	               + "referenceID : " + paymentHashValue;
+            	JOptionPane.showMessageDialog(null, message, 
+            	                              "Payment Canceled", JOptionPane.INFORMATION_MESSAGE);
+
+            	PaymentIDController.writeToCSV(extendedData);
             } 
             catch (Exception e) 
             {
@@ -62,6 +89,33 @@ public class CardPayment {
         } 
     }
 
+    public static String generateHash(String[] paymentData) 
+    {
+        try {
+            // join string elements in array to a union string
+            String input = String.join(",", paymentData);
+
+            // use SHA-256 to create hash
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = md.digest(input.getBytes());
+
+            // change hash to hex-string
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) 
+            {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
+        } 
+        catch (NoSuchAlgorithmException e) 
+        {
+            throw new RuntimeException(e);
+        }
+    }
+    
     public boolean processPayment() 
     {
     	
@@ -106,11 +160,6 @@ public class CardPayment {
     	                JOptionPane.ERROR_MESSAGE);
     	        }
     	    }
-    	    
-    	    JOptionPane.showMessageDialog(null, 
-    	        "Your payment of $" + amount + " is completed.", 
-    	        "Payment Completed", 
-    	        JOptionPane.INFORMATION_MESSAGE);
     	    
     	    addPaymentInfoToCSV(amount, paymentID, customerCardNumber);
     	}

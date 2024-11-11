@@ -49,17 +49,19 @@ public class PaymentIDController {
     
 
     // Read CSV file and return row list
-    private static List<String[]> readCSV(String filePath) throws IOException
-    {
+    private static List<String[]> readCSV(String filePath) throws IOException {
         List<String[]> data = new ArrayList<>();
         File csvFile = new File(filePath);
 
         if (csvFile.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) 
-            {
+            try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
                 String line;
-                while ((line = br.readLine()) != null) 
-                {
+                boolean firstLine = true; // check if reading first line
+                while ((line = br.readLine()) != null) {
+                    if (firstLine) {
+                        firstLine = false; // ignore first line
+                        continue;
+                    }
                     data.add(line.split(",")); // CSV separated by comma
                 }
             }
@@ -67,6 +69,7 @@ public class PaymentIDController {
 
         return data;
     }
+
 
     
     // Write a new line to CSV
